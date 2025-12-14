@@ -13,7 +13,7 @@ const CYAN = '\x1b[36m';
 const WHITE = '\x1b[37m';
 module.exports = {
 	metaInfo: {
-		id: "print_message"
+		id: "console-log"
 	},
 	main(cat) {
 		cat.onMessage.all(msg => {
