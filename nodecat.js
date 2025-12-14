@@ -11,8 +11,8 @@ print.log(`Nodecat v${NODECAT_VERSION} 正在启动`)
 
 globalThis.NodecatConfig = {
 	account: 1145141919,
-	napcat_ws_token: "RDdoV:{)(wI8k__w",
-	napcat_ws_url: "ws://127.0.0.1:5001/"
+	napcat_ws_token: "123456789",
+	napcat_ws_url: "ws://127.0.0.1:3001/"
 };
 try {
 	NodecatConfig = JSON.parse(fs.readFileSync("config.json"))
