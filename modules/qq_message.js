@@ -1,14 +1,16 @@
+const client = require("./ws_client.js")
+
 class QQMessage {
-	constructor(data) {
-		this.rawData = data;
-		this.id = data.message_id;
-		this.rawText = data.raw_message;
-		this.content = data.message;
-		this.contentFormat = data.message_format;
-		this.from = data.message_type;
-		
-		this.groupId = data.group_id;
-		this.userId = data.user_id;
+	constructor(data) { // 从napcat获取到的data
+		this.rawData = data; // 原始json
+		this.id = data.message_id; // 消息id
+		this.rawText = data.raw_message; // cq文本
+		this.content = data.message; // 内容
+		this.contentFormat = data.message_format; // 内容类型
+		this.from = data.message_type; // 来自
+
+		this.groupId = data.group_id; // 群id
+		this.userId = data.user_id; // 发送者id
 	}
 
 	get text() {
@@ -33,12 +35,30 @@ class QQMessage {
 		}
 	}
 
-	getSender() {
-		//return 
+	getSender(opts = {}) {
+		if (opts.detail) { // 详细的话就返回期约
+			let self = this;
+			return new Promise((resolve, reject) => {
+				if (this.from === "group") { // 来自群，获取群成员信息
+					client.tellNapcat("get_group_member_info", {
+						group_id: self.groupId,
+						user_id: self.userId
+					}, (err, data) => {
+						if (err) reject(err); // 有错误就拒绝，failed也是
+						else if (data.status === "failed") reject(data);
+						else resolve(data.data) // 以data解决
+					})
+				} else {
+					resolve(this.rawData.sender);// 以sender对象解决
+				}
+			})
+		} else { // 否则直接返回sender
+			return this.rawData.sender;
+		}
 	}
 
 	getChat() {
-
+		
 	}
 
 	static fromString(str) {

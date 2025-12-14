@@ -23,7 +23,7 @@ class QQGroup extends Chat {
 				group_id: self.id,
 				message: msg.content,
 				auto_escape: msg.autoEscape ? true : false
-			}, data => {
+			}, (err, data) => {
 				if (data.status === "failed") {
 					// 显示错误原因
 					print.error(`消息发送失败: ${data.message}`)

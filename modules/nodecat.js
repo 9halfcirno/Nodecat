@@ -1,7 +1,17 @@
 const Chat = require("./qq_chat.js")
 const QQMessage = require("./qq_message.js")
 const client = require("./ws_client.js")
+const PluginManager = require("./plugin_manager.js")
 
+const Nodecat = {
+	// 处理qq消息方法
+	handleQQMessage(msg) {
+		if (!(msg instanceof QQMessage)) msg = new QQMessage(msg)
+		PluginManager.triggerQQMessage(msg)
+	}
+}
+
+/*
 class Nodecat extends Chat {
 	constructor() {
 		super({
@@ -60,5 +70,5 @@ class Nodecat extends Chat {
 }
 
 let cat = new Nodecat();
-
-module.exports = cat;
+*/
+module.exports = Nodecat;

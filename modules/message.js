@@ -1,8 +1,32 @@
 class Message {
 	constructor(data) {
-		this.from = data.from; // 消息来自哪里
-		//this.
+		this.content = []; // 消息元素数组
+		this.contentFormat = "array"; // 消息格式
+		
 	}
+	
+	get text() {
+		
+	}
+	set text(str) {
+		//return (str)
+	}
+	
+	toString() {
+		for (let s of this.content) {
+			
+		}
+	}
+}
+
+Message.messageToStringFormat = {
+	cq(content) {
+		for (let b of content) {
+			
+		}
+	},
+	nodecat(content) {},
+	simple(content) {}
 }
 
 /*

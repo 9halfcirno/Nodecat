@@ -7,8 +7,16 @@ const NapcatWebSocketClient = {
 	OPEN: 2,
 	CLOSED: 0,
 	CONNECTING: 1,
+	_closedBy: "unexpected",
 	ws: null,
 	status: 0, // 0: 未连接, 1: 正在连接, 2: 已经连接
+	connectedTime: 0,
+	lastHeartbeatTime: Infinity,
+	close() {
+		this.status = 0;
+		this._closedBy = "nodecat_exit";
+		this.ws.close()
+	},
 	connect(url, token, cb) {
 		this.status = this.CONNECTING;
 		this.ws = new WebSocket(url, {
@@ -38,6 +46,7 @@ const NapcatWebSocketClient = {
 					print.log("已成功与WS服务器建立连接");
 					print.log("开始监听消息");
 					this.status = NapcatWebSocketClient.OPEN;
+					this.connectedTime = Date.now(); // 设置连接成功的时间
 					cb && cb(null, ws);
 					// 注册一个处理器，用于解决tellNapcat的回调
 					ws.addEventListener("message", e => {
@@ -47,9 +56,9 @@ const NapcatWebSocketClient = {
 						if (data.echo && map.has(data.echo)) {
 							let cb = map.get(data.echo)
 							if (data.status === "ok") {
-								cb(data)
+								cb(null, data)
 							} else {
-								cb(data); // 直接把失败传给cb
+								cb(null, data); // 直接把失败传给cb
 							}
 						}
 					})
@@ -57,9 +66,13 @@ const NapcatWebSocketClient = {
 					ws.addEventListener("message", e => {
 						let data = util.parseJSON(e.data);
 						if (data.post_type && Object.values(onebot.EventType).includes(data.post_type)) {
-							NapcatWebSocketClient.wsMessageHandlers.forEach(h => {
-								h(data)
-							})
+							// 不接收ws服务器连接之前的消息
+							if (NapcatWebSocketClient.connectedTime / 1000 <= data.time) {
+								NapcatWebSocketClient.wsMessageHandlers.forEach(h => {
+									h(data)
+									// 这里竟然嵌套了⑨层😱
+								})
+							}
 						}
 					})
 				}
@@ -67,21 +80,26 @@ const NapcatWebSocketClient = {
 		}
 
 		ws.onerror = e => {
-			print.error("WS连接出现错误: " + e.message)
-			print.error("将在5s内重试...")
-			this.status = NapcatWebSocketClient.CLOSED;
-			cb && cb(e)
+			if (this._closedBy !== "nodecat_exit") {
+				print.error("WS连接出现错误: " + e.message)
+				this.status = NapcatWebSocketClient.CLOSED;
+				cb && cb(e)
+			}
 		}
 
 		ws.onclose = () => {
-			print.error("与WS服务器断开连接，将在5s内重试...")
-			this.status = NapcatWebSocketClient.CLOSED;
-			setTimeout(() => {NapcatWebSocketClient.connect(url, token)}, 5000);
+			if (this._closedBy !== "nodecat_exit") {
+				print.error("与WS服务器断开连接，将在5s内重试...")
+				this.status = NapcatWebSocketClient.CLOSED;
+				setTimeout(() => {
+					NapcatWebSocketClient.connect(url, token)
+				}, 5000);
+			}
 		}
 	},
 	wsSendMessageCallbacks: new Map(),
 	tellNapcat(action, params, cb) { // 回调函数版本，期约由其他对象包装
-		//if (params.group_id && params.group_id !== 819054228) return Promise.resolve();
+		// if (params.group_id && params.group_id !== 819054228) return Promise.resolve();
 		if (this.status !== this.OPEN) { // 不可通信时，打印消息
 			print.error(`[WebSocketClient.tellNapcat] 当前无法与WS服务器通信，Client状态码: ${this.status}`)
 			cb && cb(new Error(`当前无法与WS服务器通信，Client状态码: ${this.status}`))
@@ -95,6 +113,16 @@ const NapcatWebSocketClient = {
 			echo
 		}))
 	},
+	tellNapcatPromise(action, params) {
+		return new Promise((resolve, reject) => {
+			this.tellNapcat(action, params, (err, data) => {
+				if (err) return reject(err);
+				// 无论status是否为ok，都交给调用方决定怎么处理
+				resolve(data);
+			});
+		});
+	},
+
 	wsMessageHandlers: [],
 	// 注册ws的onmessage处理器，除了请求响应消息，都经处理器
 	// 这里注册的事件处理器不会因为重连而丢失
@@ -110,74 +138,5 @@ const NapcatWebSocketClient = {
 		}
 	}
 }
-
-//require("./ws_message_handler.js")
-
-/*let client = NapcatWebSocketClient;
-
-// 在这里处理ws消息
-client.registerWSMessageHandler(data => {
-	switch (data.post_type) {
-		case onebot.EventType.META:
-			wsMessageHandler.meta(data);
-			break;
-		case onebot.EventType.NOTICE:
-			wsMessageHandler.notice(data);
-			break;
-		case onebot.EventType.MESSAGE:
-			wsMessageHandler.message(data);
-			break;
-		case onebot.EventType.MESSAGE_SENT:
-			wsMessageHandler.messageSent(data);
-			break;
-		default:
-			print.warn(`未知的事件类型: ${data.post_type}`);
-			break;
-	}
-})
-
-const wsMessageHandler = {
-	meta(data) {
-		if (data.meta_event_type === onebot.MetaEventType.HEARTBEAT) {
-			if (data.status.good) {
-				print.log("[\033[34m心跳\033[0m] 心跳成功 间隔: " + data.interval + "ms 在线: " + data.status.online)
-			} else {
-				print.warn("[\033[34m心跳\033[0m] 心跳失败 间隔: " + data.interval + "ms 在线: " + data.status.online)
-			}
-		} else if (data.meta_event_type === onebot.MetaEventType.LIFECYCLE) {
-			print.log("[\033[34m生命周期\033[0m] " + data.sub_type)
-		}
-	},
-	notice(data) {
-		if (data.notice_type === "notify" && data.sub_type === "poke") {
-			if (data.user_id === 3839788105) return;
-			if (data.target_id === 3839788105) {
-				if (data.group_id)
-					client.tellNapcat("send_poke", {
-						group_id: data.group_id,
-						user_id: data.user_id
-					})
-				else
-					client.tellNapcat("send_poke", {
-						user_id: data.user_id
-					}, data => {
-						print.log(data)
-					})
-			}
-		};
-	},
-	message(data) {
-		//console.log(onebot.QQMessageType[data.message_type])
-		if (data.message_type === onebot.QQMessageType.GROUP || data.message_type === onebot.QQMessageType.PRIVATE) {
-			let msg = new qq.QQMessage(data)
-			print.log(msg.toString())
-			Nodecat.handleQQMessage(msg)
-		}
-		// 控制台打印
-		// TODO
-	},
-	messageSent(data) {
-	}
-}*/
 
 module.exports = NapcatWebSocketClient;
