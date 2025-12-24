@@ -4,7 +4,7 @@ const print = require("./modules/print.js")
 //const DataManager = require("./modules/data_manager.js")
 const PluginManager = require("./modules/plugin_manager.js")
 
-const NODECAT_VERSION = "0.0.3"
+const NODECAT_VERSION = "0.0.5"
 
 globalThis.print = print;
 print.log(`Nodecat v${NODECAT_VERSION} 正在启动`)
