@@ -1,4 +1,5 @@
 const Chat = require("./qq_chat.js")
+const onebot = require("../OneBot v11.js")
 const QQMessage = require("./qq_message.js")
 const client = require("./ws_client.js")
 const PluginManager = require("./plugin_manager.js")
@@ -8,6 +9,14 @@ const Nodecat = {
 	handleQQMessage(msg) {
 		if (!(msg instanceof QQMessage)) msg = new QQMessage(msg)
 		PluginManager.triggerQQMessage(msg)
+	},
+	handleQQNotice(data) {
+		if (data.post_type !== onebot.EventType.NOTICE) return;
+		PluginManager.triggerQQNotice(data)
+	},
+	handleQQMessageSent(msg) {
+		if (!(msg instanceof QQMessage)) msg = new QQMessage(msg)
+		PluginManager.triggerQQMessageSent(msg)
 	}
 }
 

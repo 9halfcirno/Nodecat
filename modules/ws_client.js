@@ -10,8 +10,8 @@ const NapcatWebSocketClient = {
 	_closedBy: "unexpected",
 	ws: null,
 	status: 0, // 0: 未连接, 1: 正在连接, 2: 已经连接
-	connectedTime: 0,
-	lastHeartbeatTime: Infinity,
+	//connectedTime: 0,
+	//lastOnlineTime: Infinity,
 	close() {
 		this.status = 0;
 		this._closedBy = "nodecat_exit";
@@ -46,7 +46,7 @@ const NapcatWebSocketClient = {
 					print.log("已成功与WS服务器建立连接");
 					print.log("开始监听消息");
 					this.status = NapcatWebSocketClient.OPEN;
-					this.connectedTime = Date.now(); // 设置连接成功的时间
+					///this.connectedTime = Date.now(); // 设置连接成功的时间
 					cb && cb(null, ws);
 					// 注册一个处理器，用于解决tellNapcat的回调
 					ws.addEventListener("message", e => {
@@ -67,12 +67,12 @@ const NapcatWebSocketClient = {
 						let data = util.parseJSON(e.data);
 						if (data.post_type && Object.values(onebot.EventType).includes(data.post_type)) {
 							// 不接收ws服务器连接之前的消息
-							if (NapcatWebSocketClient.connectedTime / 1000 <= data.time) {
-								NapcatWebSocketClient.wsMessageHandlers.forEach(h => {
-									h(data)
-									// 这里竟然嵌套了⑨层😱
-								})
-							}
+							//if (NapcatWebSocketClient.connectedTime / 1000 <= data.time) {
+							NapcatWebSocketClient.wsMessageHandlers.forEach(h => {
+								h(data)
+								// 这里竟然嵌套了⑨层😱
+							})
+							//}
 						}
 					})
 				}

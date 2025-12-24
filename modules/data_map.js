@@ -137,20 +137,22 @@ class FileManager {
  * --------------------------------------------------------- */
 
 class DataManager {
+	#fileManager;
+	#dataMap;
 	constructor(filePath) {
 		this.filePath = filePath;
-		this.fileManager = new FileManager(filePath);
+		this.#fileManager = new FileManager(filePath);
 
-		// 初始化 dataMap
+		// 初始化 #dataMap
 		let content = "{}";
 
 		try {
-			if (this.fileManager.exists()) {
-				content = this.fileManager.readSync();
+			if (this.#fileManager.exists()) {
+				content = this.#fileManager.readSync();
 			}
 		} catch {
 			// ignore，无文件就初始化
-			this.fileManager.writeSync("{\"data\":[]}");
+			this.#fileManager.writeSync("{\"data\":[]}");
 		}
 
 		let json;
@@ -161,38 +163,62 @@ class DataManager {
 		}
 
 		// json.data 是 [["key", {...}], ...]
-		this.dataMap = new Map(json.data || []);
+		this.#dataMap = new Map(json.data || []);
 	}
 
 	/* ----------- KV 设置 ----------- */
 
 	setKey(key, value, properties = {}) {
-		const old = this.dataMap.get(key);
+		const old = this.#dataMap.get(key);
 
+		// 检查是否可写
 		if (old && old.properties && old.properties.writable === false) {
 			return false; // 不允许修改
 		}
 
-		this.dataMap.set(key, {
-			value,
-			properties: {
-				private: false,
-				writable: true,
-				maxTime: null,
-				...properties
+		// 检查旧数据是否过期
+		let isExpired = false;
+		if (old && old.properties && old.properties.maxTime) {
+			isExpired = Date.now() >= old.properties.maxTime;
+			if (isExpired) {
+				this.#dataMap.delete(key);
 			}
+		}
+
+		// 处理daily逻辑
+		if (properties.daily) {
+			properties.maxTime = (Math.floor(Date.now() / 86400000) + 1) * 86400000;
+		}
+
+		// 合并属性：新属性覆盖旧属性，但保留未覆盖的旧属性
+		const mergedProperties = {
+			"private": false,
+			writable: true,
+			maxTime: null,
+			daily: null,
+			// 如果旧数据存在且未过期，使用旧属性作为基础
+			...((old && !isExpired) ? old.properties : {}),
+			// 新属性覆盖
+			...properties
+		};
+
+		// 设置新值
+		this.#dataMap.set(key, {
+			value,
+			properties: mergedProperties
 		});
 
 		return true;
 	}
 
 	getKey(key) {
-		const obj = this.dataMap.get(key);
+		const obj = this.#dataMap.get(key);
 		if (!obj) return undefined;
 
 		// 处理过期
 		if (obj.properties.maxTime && Date.now() >= obj.properties.maxTime) {
-			this.dataMap.delete(key);
+			// 如果有最大时间，且已超时，则删除
+			this.#dataMap.delete(key);
 			return undefined;
 		}
 
@@ -200,33 +226,29 @@ class DataManager {
 	}
 
 	deleteKey(key) {
-		return this.dataMap.delete(key);
+		return this.#dataMap.delete(key);
 	}
 
 	/* ----------- JSON 序列化 ----------- */
 
 	toJSON() {
 		return {
-			data: [...this.dataMap.entries()]
+			data: [...this.#dataMap.entries()]
 		};
 	}
 
 	saveSync() {
-		this.fileManager.writeSync(JSON.stringify(this.toJSON(), null, 2));
+		this.#fileManager.writeSync(JSON.stringify(this.toJSON()));
 	}
 
 	save() {
-		return this.fileManager.write(JSON.stringify(this.toJSON(), null, 2));
+		return this.#fileManager.write(JSON.stringify(this.toJSON()));
 	}
+}
 
-	/* ----------- 反序列化 ----------- */
-	static parse(json) {
-		const obj = typeof json === "string" ? JSON.parse(json) : json;
-		const dm = new DataManager("memory://"); // 内存假路径
-
-		dm.dataMap = new Map(obj.data || []);
-		return dm;
-	}
+function getToday() {
+	const d = new Date()
+	return `${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`
 }
 
 module.exports = DataManager;

@@ -1,13 +1,14 @@
 // 格式化时间，用于显示
 function tF() {
-	let ms = Date.now();
+	return `[${new Date().toLocaleTimeString()}]`
+	/*let ms = Date.now();
 	const totalSeconds = Math.floor(ms / 1000);
 	const SECS_DAY = 86400;
 	const s = ((totalSeconds % SECS_DAY) + SECS_DAY) % SECS_DAY;
 	const h = Math.floor(s / 3600);
 	const m = Math.floor((s % 3600) / 60);
 	const sec = s % 60;
-	return `[${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}]`;
+	return `[${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}]`;*/
 }
 
 const print = {
