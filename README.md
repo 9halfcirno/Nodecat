@@ -1,4 +1,4 @@
-## Nodecat v0.0.5
+## Nodecat v0.0.6
 ### 描述
 **Nodecat**是为Napcat的WebSocket服务器开发的客户端框架
 
