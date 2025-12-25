@@ -22,6 +22,9 @@ const PluginManager = {
 		if (!plugin.metaInfo?.id) {
 			return print.error(`插件 ${filename} 缺少 metaInfo.id`)
 		}
+		if (this.plugins.has(plugin.metaInfo.id)) {
+			return print.error(`插件文件 ${filename} 声明重复id: ${plugin.metaInfo.id}`)
+		}
 		this.plugins.set(plugin.metaInfo.id, plugin)
 	},
 	loadPluginById(id) {
@@ -85,9 +88,14 @@ const PluginManager = {
 			c.triggerQQNotice(data)
 		})
 	},
+	triggerQQRequest(request) {
+		this.pluginContexts.forEach(c => {
+			c.triggerQQRequest(request)
+		})
+	},
 
 	saveAllPluginData() {
-		this.pluginContexts.forEach(c => c.data.save())
+		this.pluginContexts.forEach(c => c.data.filePath && c.data.saveSync())
 	}
 }
 

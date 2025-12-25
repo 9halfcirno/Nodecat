@@ -20,6 +20,9 @@ client.registerWSMessageHandler(data => {
 		case onebot.EventType.MESSAGE_SENT:
 			wsMessageHandler.messageSent(data);
 			break;
+		case onebot.EventType.REQUEST:
+			wsMessageHandler.request(data);
+			break;
 		default:
 			print.warn(`未知的事件类型: ${data.post_type}`);
 			break;
@@ -48,5 +51,8 @@ const wsMessageHandler = {
 	},
 	messageSent(data) {
 		nodecat.handleQQMessageSent(data)
+	},
+	request(data) {
+		nodecat.handleQQRequest(data)
 	}
 }

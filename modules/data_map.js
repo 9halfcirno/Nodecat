@@ -9,11 +9,21 @@ class FileManager {
 	constructor(filePath) {
 		this.filePath = path.resolve(filePath);
 		this.encoding = 'utf8';
+		this.saving = false;
 	}
 
 	async exists() {
 		try {
 			await fs.promises.access(this.filePath);
+			return true;
+		} catch {
+			return false;
+		}
+	}
+
+	existsSync() {
+		try {
+			fs.accessSync(this.filePath);
 			return true;
 		} catch {
 			return false;
@@ -111,9 +121,17 @@ class FileManager {
 		}
 	}
 
-	watch(callback) {
-		return fs.watch(this.filePath, (type, filename) => callback(type, filename));
+	copySync(targetPath) {
+		const full = path.resolve(targetPath);
+		fs.mkdirSync(path.dirname(full), {
+			recursive: true
+		});
+		fs.copyFileSync(this.filePath, full);
 	}
+
+	/*watch(callback) { // 有bug直接注释
+		return fs.watch(this.filePath, (type, filename) => callback(type, filename));
+	}*/
 
 	setEncoding(e) {
 		this.encoding = e;
@@ -139,70 +157,74 @@ class FileManager {
 class DataManager {
 	#fileManager;
 	#dataMap;
+
 	constructor(filePath) {
 		this.filePath = filePath;
 		this.#fileManager = new FileManager(filePath);
 
-		// 初始化 #dataMap
-		let content = "{}";
+		let content;
 
-		try {
-			if (this.#fileManager.exists()) {
-				content = this.#fileManager.readSync();
-			}
-		} catch {
-			// ignore，无文件就初始化
-			this.#fileManager.writeSync("{\"data\":[]}");
+		// -------- 修正后的初始化逻辑 --------
+		if (this.#fileManager.existsSync()) {
+			// 文件存在：只允许读，不允许覆盖
+			content = this.#fileManager.readSync();
+		} else {
+			// 文件不存在：初始化
+			content = JSON.stringify({
+				data: []
+			});
+			this.#fileManager.writeSync(content);
 		}
 
 		let json;
 		try {
 			json = JSON.parse(content);
 		} catch {
-			json = {};
+			// -------- JSON 损坏：备份再覆盖 --------
+			const backupPath = `${filePath}.broken_${Date.now()}`;
+			try {
+				this.#fileManager.copySync(backupPath);
+			} catch {}
+
+			json = {
+				data: []
+			};
+			this.#fileManager.writeSync(JSON.stringify(json));
 		}
 
-		// json.data 是 [["key", {...}], ...]
 		this.#dataMap = new Map(json.data || []);
 	}
 
 	/* ----------- KV 设置 ----------- */
 
 	setKey(key, value, properties = {}) {
-		const old = this.#dataMap.get(key);
+		let old = this.#dataMap.get(key);
 
-		// 检查是否可写
-		if (old && old.properties && old.properties.writable === false) {
-			return false; // 不允许修改
-		}
-
-		// 检查旧数据是否过期
 		let isExpired = false;
 		if (old && old.properties && old.properties.maxTime) {
 			isExpired = Date.now() >= old.properties.maxTime;
 			if (isExpired) {
 				this.#dataMap.delete(key);
+				old = null;
 			}
 		}
 
-		// 处理daily逻辑
+		if (old && old.properties && old.properties.writable === false) {
+			return false;
+		}
+
 		if (properties.daily) {
 			properties.maxTime = (Math.floor(Date.now() / 86400000) + 1) * 86400000;
 		}
 
-		// 合并属性：新属性覆盖旧属性，但保留未覆盖的旧属性
 		const mergedProperties = {
-			"private": false,
+			private: false,
 			writable: true,
 			maxTime: null,
-			daily: null,
-			// 如果旧数据存在且未过期，使用旧属性作为基础
 			...((old && !isExpired) ? old.properties : {}),
-			// 新属性覆盖
 			...properties
 		};
 
-		// 设置新值
 		this.#dataMap.set(key, {
 			value,
 			properties: mergedProperties
@@ -215,9 +237,8 @@ class DataManager {
 		const obj = this.#dataMap.get(key);
 		if (!obj) return undefined;
 
-		// 处理过期
+		// 你都过期了我留你干嘛，不然叫maxTime呢？
 		if (obj.properties.maxTime && Date.now() >= obj.properties.maxTime) {
-			// 如果有最大时间，且已超时，则删除
 			this.#dataMap.delete(key);
 			return undefined;
 		}
@@ -247,8 +268,8 @@ class DataManager {
 }
 
 function getToday() {
-	const d = new Date()
-	return `${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`
+	const d = new Date();
+	return `${d.getFullYear()}_${d.getMonth() + 1}_${d.getDate()}`;
 }
 
 module.exports = DataManager;

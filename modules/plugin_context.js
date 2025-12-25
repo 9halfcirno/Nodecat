@@ -6,6 +6,7 @@ const onebot = require("../OneBot v11.js")
 const util = require("./util.js")
 const client = require("./ws_client.js")
 const PluginExports = require("./plugin_exports.js")
+//todo const blacklist = require("./black_list.js")
 
 class QQMessageTrigger { // 消息触发器类
 	constructor(predicate, callback) {
@@ -50,20 +51,36 @@ class QQMessageSentTrigger {
 	}
 }
 
+class QQRequestTrigger {
+	constructor(cb) {
+		this.cb = cb;
+		this.uuid = util.uuid();
+	}
+	test(request) {
+		this.cb?.(request);
+	}
+}
+
 class PluginContext { // 插件注册上下文
-	constructor(id) {
+	constructor(id, opts = {}) {
 		this.id = id;
 		this.messageTriggers = new Map(); // 自己的触发器
 		this.noticeTriggers = new Map();
+		this.requestTriggers = new Map();
 		this.messageSentTriggers = new Map();
 
 		// 自定义ws处理器
 		this.customWSMessageHandler = new Map();
+
 		// 插件数据存储
-		this.dataMap = new DataMap(path.join(NodecatConfig.nodecat_run_path, "storage/data/plugins/", `${id}.json`))
+		let file = path.join(NodecatConfig.nodecat_run_path, "storage/data/plugins/", `${id}.json`)
+		this.dataMap = new DataMap(file)
 
 		// 待发送消息
 		this.messageSendQueue = new Queue([], this.#reallySendMessage)
+
+		// 所有action队列
+		this.actionQueue = new Queue([], this.#reallySendAction)
 	}
 
 	// es2022享受者😋
@@ -92,11 +109,24 @@ class PluginContext { // 插件注册上下文
 		return p;
 	}
 
+	#reallySendAction(obj = {}) {
+		let {
+			action,
+			...params
+		} = obj;
+		return client.tellNapcatPromise(action, {
+			...params
+		});
+	}
+
 	registerQQMessageTrigger(trigger) {
 		this.messageTriggers.set(trigger.uuid, trigger)
 	}
 	registerQQNoticeTrigger(trigger) {
 		this.noticeTriggers.set(trigger.uuid, trigger)
+	}
+	registerQQRequestTrigger(trigger) {
+		this.requestTriggers.set(trigger.uuid, trigger)
 	}
 	registerQQMessageSentTrigger(trigger) {
 		this.messageSentTriggers.set(trigger.uuid, trigger)
@@ -120,6 +150,12 @@ class PluginContext { // 插件注册上下文
 	triggerQQMessageSent(msg) {
 		this.messageSentTriggers.forEach(t => {
 			t.test(msg)
+		})
+	}
+	
+	triggerQQRequest(re) {
+		this.requestTriggers.forEach(t => {
+			t.test(re)
 		})
 	}
 
@@ -181,51 +217,55 @@ class PluginContext { // 插件注册上下文
 	onNotice(type, cb) {
 		this.registerQQNoticeTrigger(new QQNoticeTrigger(type, cb))
 	}
+	
+	onRequest(cb) {
+		this.registerQQRequestTrigger(new QQRequestTrigger(cb))
+	}
 
 	sendGroupMessage(group, msg, opts = {}) {
-		// 目前发送string消息
-		let m = {
-			to: "group",
-			group_id: group,
-			content: msg
-		}
+		if (!["string", "number"].includes(typeof group)) return;
+		let action = {
+			action: "send_group_msg",
+			group_id: group.toString(), // 修正了拼写错误: grouo_id -> group_id
+			message: msg,
+		};
 		if (opts.queue !== false) {
-			this.messageSendQueue.add(m)
+			this.actionQueue.add(action)
 		} else {
-			this.#reallySendMessage(m)
+			this.#reallySendAction(action)
 		}
 	}
 
 	sendFriendMessage(friend, msg, opts = {}) {
-		// 目前发送string消息
-		let m = {
-			to: "friend",
-			user_id: friend,
-			content: msg
-		}
+		if (!["string", "number"].includes(typeof friend)) return;
+		let action = {
+			action: "send_private_msg",
+			user_id: friend.toString(),
+			message: msg,
+		};
 		if (opts.queue !== false) {
-			this.messageSendQueue.add(m)
+			this.actionQueue.add(action)
 		} else {
-			this.#reallySendMessage(m)
+			this.#reallySendAction(action)
 		}
 	}
 
 	sendPrivateMessage(group, user, msg, opts = {}) {
-		// 目前发送string消息
-		let m = {
-			to: "private",
-			group_id: group,
-			user_id: user,
-			content: msg
-		}
+		if (!["string", "number"].includes(typeof group) || !["string", "number"].includes(typeof user)) return;
+		let action = {
+			action: "send_private_msg",
+			group_id: group.toString(),
+			user_id: user.toString(),
+			message: msg,
+		};
 		if (opts.queue !== false) {
-			this.messageSendQueue.add(m)
+			this.actionQueue.add(action)
 		} else {
-			this.#reallySendMessage(m)
+			this.#reallySendAction(action)
 		}
 	}
 
-	replyMessage(msg, content, opts, cb) {
+	replyMessage(msg, content, opts = {}, cb) {
 		if (msg instanceof QQMessage) { // 如果是原始对象
 			if (msg.from === "group") {
 				this.sendGroupMessage(msg.groupId, content, opts)
@@ -241,7 +281,18 @@ class PluginContext { // 插件注册上下文
 		}
 	}
 
-
+	sendFriendMsg(...args) {
+		this.sendFriendMessage(...args)
+	}
+	sendGroupMsg(...args) {
+		this.sendGroupMessage(...args)
+	}
+	sendPrivateMsg(...args) {
+		this.sendPrivateMessage(...args)
+	}
+	replyMsg(...args) {
+		this.replyMessage(...args)
+	}
 }
 
 PluginContext.prototype.napcat = {
@@ -343,6 +394,51 @@ PluginContext.onMessageHandler = {
 			callback);
 		this.registerQQMessageTrigger(handler);
 		return handler.uuid;
+	}
+}
+
+/*=== API --- group ===*/
+PluginContext.prototype.group = {
+	exit(group, force = false) { // 退出群聊
+		if (!["string", " number"].includes(typeof group)) return;
+		return client.tellNapcatPromise("set_group_leave", {
+			group_id: group.toString(),
+			is_dismiss: opts.force
+		})
+	},
+	kick(group, user, forever = false) {
+		if (!["string", " number"].includes(typeof group)) return;
+		if (!["string", " number"].includes(typeof user)) return;
+		return client.tellNapcatPromise("set_group_kick", {
+			group_id: group.toString(),
+			user_id: user.toString(),
+			reject_add_request: opts.forever
+		})
+	},
+	setBan(group, user, duration = 30 * 60) {
+		if (!["string", " number"].includes(typeof group)) return;
+		if (!["string", " number"].includes(typeof user)) return;
+		return client.tellNapcatPromise("set_group_kick", {
+			group_id: group.toString(),
+			user_id: user.toString(),
+			duration: opts.duration
+		})
+	},
+	setWholeBan(group, enable = false) {
+		if (!["string", " number"].includes(typeof group)) return;
+		return client.tellNapcatPromise("set_group_whole_ban", {
+			group_id: group.toString(),
+			enable: enable
+		})
+	},
+	setAdmin(group, user, enable = true) {
+		if (!["string", " number"].includes(typeof group)) return;
+		if (!["string", " number"].includes(typeof user)) return;
+		return client.tellNapcatPromise("set_group_admin", {
+			group_id: group.toString(),
+			user_id: user.toString(),
+			enable: enable
+		})
 	}
 }
 
