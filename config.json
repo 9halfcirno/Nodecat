@@ -1,5 +1,7 @@
 {
-	"account": 1145141919,
-	"napcat_ws_token": "123456789",
+	"bot_account": "auto",
+	"bot_name": "Nodecat",
+	"bot_master": 123456789,
+	"napcat_ws_token": "123456",
 	"napcat_ws_url": "ws://127.0.0.1:3001/"
 }
