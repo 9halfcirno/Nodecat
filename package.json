@@ -1,0 +1,16 @@
+{
+	"name": "nodecat",
+	"version": "1.0.0",
+	"description": "Nodeca, 对接Onebot v11协议QQBot框架",
+	"keywords": [
+		"nodecat"
+	],
+	"license": "MIT",
+	"author": "9halfcirno",
+	"type": "module",
+	"main": "./boot/main.js",
+	"scripts": {
+		"nodecat": "node boot/main.js"
+	},
+	"dependencies": {}
+}
