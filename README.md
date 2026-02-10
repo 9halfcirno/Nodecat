@@ -45,7 +45,7 @@ npm run nodecat
 ```
 来启动本程序，若没有npm则通过
 ```bash
-node main.js
+node boot/main.js
 ```
 来启动
 
