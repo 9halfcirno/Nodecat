@@ -1,4 +1,5 @@
 {
-  "onebot_network": [],
-  "connect": 0
+	"onebot_network": [
+	],
+	"connect": 0
 }
