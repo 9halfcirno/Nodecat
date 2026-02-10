@@ -1,5 +1,5 @@
-import WSClient from "../code/network/websocket_client.js"
-import HTTPClient from "../code/network/http_client.js"
+import WSClient from "../code/onebot_network/websocket_client.js"
+import HTTPClient from "../code/onebot_network/http_client.js"
 
 export default (function() {
 	return new Promise((resolve, reject) => {

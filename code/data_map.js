@@ -1,31 +1,36 @@
-class DataManager {
+class DataMap {
 	#dataMap;
 
-	constructor(initialData) {
+	constructor(initialJSON) {
 		this.#dataMap = new Map();
 
-		// 允许外部传入 JSON / Map / Array 初始化
-		if (initialData) {
-			this.load(initialData);
+		if (initialJSON) {
+			this.loadJSON(initialJSON);
 		}
 	}
 
-	/* ----------- 初始化 / 反序列化 ----------- */
+	/* ----------- JSON 反序列化 ----------- */
 
-	load(data) {
+	static fromJSON(json) {
+		const dm = new DataMap();
+		dm.loadJSON(json);
+		return dm;
+	}
+
+	loadJSON(json) {
 		try {
-			if (data instanceof Map) {
-				this.#dataMap = new Map(data);
-			} else if (Array.isArray(data)) {
-				this.#dataMap = new Map(data);
-			} else if (typeof data === "string") {
-				const json = JSON.parse(data);
+			if (json instanceof Map) {
+				this.#dataMap = new Map(json);
+			} else if (Array.isArray(json)) {
+				this.#dataMap = new Map(json);
+			} else if (typeof json === "string") {
+				const obj = JSON.parse(json);
+				this.#dataMap = new Map(obj?.data || []);
+			} else if (typeof json === "object") {
 				this.#dataMap = new Map(json?.data || []);
-			} else if (typeof data === "object") {
-				this.#dataMap = new Map(data?.data || []);
 			}
 		} catch {
-			// 数据损坏直接清空（由外部决定是否备份）
+			// 数据损坏：直接清空（由外部决定是否回滚）
 			this.#dataMap.clear();
 		}
 	}
@@ -89,14 +94,14 @@ class DataManager {
 	}
 
 	has(key) {
-		return this.getKey(key) !== undefined;
+		return this.get(key) !== undefined;
 	}
 
 	delete(key) {
 		return this.#dataMap.delete(key);
 	}
 
-	/* ----------- 遍历 / 工具 ----------- */
+	/* ----------- 遍历 / 信息 ----------- */
 
 	keys() {
 		return [...this.#dataMap.keys()];
@@ -110,7 +115,7 @@ class DataManager {
 		return this.#dataMap.size;
 	}
 
-	/* ----------- 序列化 ----------- */
+	/* ----------- JSON 序列化 ----------- */
 
 	toJSON() {
 		return {

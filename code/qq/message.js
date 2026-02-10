@@ -1,4 +1,6 @@
 import OneBotBridge from "../onebot_bridge.js"
+import QQMsgSender from "../qq_message_sender.js"
+import Permission from "../permission_system.js"
 
 /**
  * 解析 CQ 码字符串为 OneBot v11 array 消息格式
@@ -94,25 +96,32 @@ class QQMessage {
 		else this.content = parseCQToOneBotArray(data.message);
 
 		// 发送者
+		let role = Permission.permissionOf(data.sender.user_id);
 		this.sender = {
 			id: data.sender.user_id,
 			nickname: data.sender.nickname,
 			card: data.sender.card,
-			role: data.sender.role,
+			role: role !== "member" ? role : data.sender.role,
 			title: data.sender.title,
 			level: data.sender.level
 		};
-		
+
 		// 来自群聊(如果有)
 		if (this.from === "group")
 			this.group = {
 				id: data.group_id,
 				name: data.group_name
 			}
-		
 	}
 
-	async getDetailedMessage(from = 0) {
+	reply(msg) {
+		QQMsgSender.send(msg, {
+			group: this.group?.id,
+			user: this.sender.id
+		})
+	}
+
+	async getDetailedString(from = 0) {
 		let text = '';
 		for (const block of this.content) {
 			if (this.content.indexOf(block) < from) continue;
@@ -171,7 +180,21 @@ class QQMessage {
 		}
 		return text;
 	}
+	
+	/**
+	 * 将消息转为开头不包含回复和@ME的一般字符串
+	 */
+	toNormalString() {
+		let i = 0;
+		for (i = 0; i < this.content.length; i++) {
+			if (this.content[i].type === "reply") continue;
+			if (this.content[i].type === "at" && this.content[i].data?.qq == this.data.self_id) continue;
+			break;
+		};
+		return this.toString(i).trim();
+	}
 }
+
 
 
 QQMessage.BlockType = {

@@ -6,11 +6,20 @@ export default (async function() {
 	const onebot = readConfig("onebot.json");
 	NodecatConfig.OneBotNetwork = onebot;
 	if (onebot) console.log(`[Config] 成功加载配置: OneBotNetwork`)
+
 	// 加载 Sandbox 网络配置
-	
 	const sandbox = readConfig("sandbox.json");
 	NodecatConfig.Sandbox = sandbox;
 	if (sandbox) console.log(`[Config] 成功加载配置: Sandbox`)
+	
+	// 加载 Permission 网络配置
+	const per = readConfig("permission.json");
+	NodecatConfig.Master = per.master;
+	NodecatConfig.Operators = per.operators;
+	if (per) console.log(`[Config] 成功加载配置: Permission`)
+	
+	
+	
 	
 	NodecatConfig.Bot = {}
 })

@@ -1,4 +1,4 @@
-class MessageConstructor {
+export default class {
 	constructor() {
 		this.content = [];
 	}
@@ -13,14 +13,14 @@ class MessageConstructor {
 
 	text(text) {
 		this.block("text", {
-			text.toString()
+			text: text.toString()
 		});
 		return this;
 	}
 
 	at(qq) {
 		this.block("at", {
-			qq.toString()
+			qq: qq.toString()
 		});
 		return this;
 	}
@@ -75,10 +75,10 @@ class MessageConstructor {
 		file,
 		thumb
 	}) {
-		this.("video", {
+		this.block("video", {
 			file,
 			thumb
 		})
-	};
-	return this;
+		return this;
+	}
 }

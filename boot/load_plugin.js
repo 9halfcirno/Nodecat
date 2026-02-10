@@ -1,11 +1,11 @@
-import PluginManager from "../code/plugin_module/manager.js"
+import manager from "../code/plugin_module/manager.js"
 
 export default (async function() {
-	const manager = new PluginManager();
-	
 	await manager.scanPluginFiles()
-	for (const url of manager.pluginFiles) {
-		await manager.loadPlugin(url);
+	await manager.indexPlugins();
+
+	for (const id of manager.pluginFileMap.keys()) {
+		await manager.loadPluginById(id);
 	}
 	return manager;
 })

@@ -1,0 +1,17 @@
+{
+	"onebot_network": [
+		{
+			"type": "websocket",
+			"role": "server",
+			"url": "ws://39.108.66.38:5001/",
+			"token": "asdfghjklzxcvbm"
+		},
+		{
+			"type": "websocket",
+			"role": "server",
+			"url": "ws://39.108.66.38:5002/",
+			"token": "testbotnodecat"
+		}
+	],
+	"connect": 1
+}

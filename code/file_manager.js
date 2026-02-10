@@ -1,14 +1,14 @@
 import fs from "fs";
-const fsp = fs.promises;
+import fsp from "fs/promises";
 import path from "path";
 
-class FileManager {
+export default class FileManager {
 	constructor(filePath) {
 		this.filePath = path.resolve(filePath);
 		this.dir = path.dirname(this.filePath);
 		this.tmpPath = this.filePath + ".tmp";
 
-		// 进程内异步串行锁
+		// 进程内异步串行队列
 		this._queue = Promise.resolve();
 	}
 
@@ -21,16 +21,15 @@ class FileManager {
 		return this._queue;
 	}
 
-	_ensureDirSync() {
-		// ⭐ 目录不存在就递归创建
-		fs.mkdirSync(this.dir, {
+	async _ensureDir() {
+		// ⭐ 异步递归创建目录（关键点）
+		await fsp.mkdir(this.dir, {
 			recursive: true
 		});
 	}
 
-	async _ensureDir() {
-		// ⭐ 目录不存在就递归创建
-		await fsp.mkdir(this.dir, {
+	_ensureDirSync() {
+		fs.mkdirSync(this.dir, {
 			recursive: true
 		});
 	}
@@ -44,7 +43,14 @@ class FileManager {
 	}
 
 	readSync(encoding = "utf8") {
-		return fs.readFileSync(this.filePath, encoding);
+		try {
+			return fs.readFileSync(this.filePath, encoding);
+		} catch (e) {
+			if (e.code === "ENOENT") {
+				return null; // ⭐ 不存在 = null
+			}
+			throw e;
+		}
 	}
 
 	writeSync(data, encoding = "utf8") {
@@ -58,20 +64,11 @@ class FileManager {
 			fs.closeSync(fd);
 		}
 
-		// ⭐ 原子替换
 		fs.renameSync(this.tmpPath, this.filePath);
 	}
 
-	deleteSync() {
-		try {
-			fs.unlinkSync(this.filePath);
-		} catch (e) {
-			if (e.code !== "ENOENT") throw e;
-		}
-	}
-
 	/* ======================
-	 * 异步 API（原子 + 串行）
+	 * 异步 API（原子 + 自动建目录）
 	 * ====================== */
 
 	async exists() {
@@ -87,12 +84,20 @@ class FileManager {
 
 	async read(encoding = "utf8") {
 		return this._enqueue(async () => {
-			return fsp.readFile(this.filePath, encoding);
+			try {
+				return await fsp.readFile(this.filePath, encoding);
+			} catch (e) {
+				if (e.code === "ENOENT") {
+					return null; // ⭐ 不存在 = null
+				}
+				throw e;
+			}
 		});
 	}
 
 	async write(data, encoding = "utf8") {
 		return this._enqueue(async () => {
+			// ⭐ 这里已经保证目录存在
 			await this._ensureDir();
 
 			const fh = await fsp.open(this.tmpPath, "w");
@@ -118,5 +123,3 @@ class FileManager {
 		});
 	}
 }
-
-export default FileManager;
