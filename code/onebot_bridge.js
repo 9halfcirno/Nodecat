@@ -1,4 +1,4 @@
-import Client from "./network/client.js";
+import Client from "./onebot_network/client.js";
 import util from "./util.js";
 
 const Bridge = {

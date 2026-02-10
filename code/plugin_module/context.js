@@ -10,14 +10,22 @@ import {
 	StartsWithTrigger
 } from "../qq_message_trigger.js";
 import QQMsgSender from "../qq_message_sender.js"
+import DataManager from "../data_mamager.js"
+import Command from "../command_manager.js"
+import MsgConstructor from "../qq/message_constructor.js"
+import network from "../network.js"
 
 class API {
 	#context; // 上下文引用
 	#msgSendQueue; // 消息发送队列
+	#dataMap; // 数据存储
+	#registeredCommands = []; // 记录插件注册的指令和回调
 	constructor({
-		context
+		context,
+		dataMap
 	}) {
 		this.#context = context;
+		this.#dataMap = dataMap;
 		this.msgTriggers = [];
 		this.msgSentTriggers = [];
 
@@ -35,6 +43,30 @@ class API {
 				return Bridge.send(action, params)
 			}
 		}
+	}
+
+	get data() {
+		return this.#dataMap;
+	}
+	
+	get network() {
+		return network;
+	}
+
+	async require(id) {
+		if (!this.#context.manager.pluginLoaded.has(id)) {
+			await this.#context.manager.loadPluginById(id)
+		}
+		return this.#context.manager.exports.get(id)
+	}
+
+	set exports(exp) {
+		this.#context.exports = exp;
+	}
+	
+	get message() {
+		const msg = new MsgConstructor;
+		return msg
 	}
 
 	sendGroupMessage(group, msg, opts) {
@@ -158,6 +190,23 @@ class API {
 		})
 	}
 
+	get onCommand() {
+		let self = this;
+		return (cmd, opts) => {
+			return {
+				then(cb) {
+					Command.register(cmd, cb, opts);
+					// 保存到已注册列表，用于卸载时清理
+					self.#registeredCommands.push({
+						cmd,
+						cb
+					});
+					return this;
+				}
+			};
+		};
+	}
+
 	get onMessageSent() {
 		let self = this;
 		return {
@@ -167,12 +216,23 @@ class API {
 			}
 		}
 	}
+
+	_clearRegisteredCommands() {
+		this.#registeredCommands.forEach(({
+			cmd,
+			cb
+		}) => {
+			Command.unregister(cmd, cb); // 卸载回调
+		});
+		this.#registeredCommands = []; // 清空记录
+	}
 }
 
 
 
 class PluginContext {
-	constructor(plugin) {
+	constructor(plugin, manager) {
+		this.manager = manager;
 		this.id = plugin.id;
 		this.pluginMain = plugin.main;
 		this.api = null;
@@ -188,18 +248,36 @@ class PluginContext {
 
 	async init() {
 		const self = this;
+		this.dataManager = await DataManager.open(`plugin/${this.id}`)
 		this.api = new API({
-			context: self
+			context: self,
+			dataMap: this.dataManager
 		});
-		await this.pluginMain(this.api); // 传入api对象
+		this.pluginMain(this.api); // 传入api对象
+	}
+
+	async unload() {
+		console.log(`[Plugin] 正在停用插件"${this.id}"`);
+
+		// 卸载插件注册的所有指令回调
+		if (this.api) {
+			this.api._clearRegisteredCommands();
+		}
+		//await DataManager.save();
+		await DataManager.close(`plugin/${this.id}`) // 关闭
+		return true;
+	}
+
+	set exports(exp) {
+		this.manager.exports.set(this.id, exp);
 	}
 
 	triggerMessage(msg) {
-		this.api.msgTriggers.forEach(t => t.test(msg))
+		this.api && this.api.msgTriggers.forEach(t => t.test(msg))
 	}
 
 	triggerMessageSent(msg) {
-		this.api.msgSentTriggers.forEach(t => t(msg))
+		this.api && this.api.msgSentTriggers.forEach(t => t(msg))
 	}
 }
 

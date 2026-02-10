@@ -1,7 +1,9 @@
 import Bridge from "./onebot_bridge.js"
+import MsgConstructor from "./qq/message_constructor.js"
 
 const QQMessageSender = {
 	async send(msg, opts = {}) {
+		if (msg instanceof MsgConstructor) msg = msg.content;
 		if (opts.group) {
 			if (opts.user) { // 私聊
 				return await Bridge.send("send_msg", {

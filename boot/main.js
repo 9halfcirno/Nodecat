@@ -4,7 +4,10 @@ import createBridge from "./create_onebot_bridge.js"
 import loadPlugin from "./load_plugin.js"
 import loadOneBotConfig from "./load_onebot_config.js"
 import OneBotMessageHandler from "../code/onebot_message_handler.js"
-//import loadTUI from "./load_tui.js"
+//import onExit from "./load_tui.js"
+import QQMsgHandler from "../code/qq_message_handler.js"
+//import test from "../code/data_mamager.js"
+import "../webui/index.js";
 
 const RESET = "\x1b[0m";
 const RED = "\x1b[31m";
@@ -43,31 +46,45 @@ console.error = (...args) => {
 
 async function main() {
 	await loadConfig();
-	
+
 	//await loadTUI();
-	
+
 	const connect = await connectToOneBot();
 	const bridge = await createBridge(connect);
 	await loadOneBotConfig(bridge);
 	const pluginManager = await loadPlugin();
 
-
 	// 注册消息处理器
 	const messageHandler = new OneBotMessageHandler(bridge);
 	messageHandler.onMessage(msg => {
-		pluginManager.triggerMessage(msg)
+		QQMsgHandler.handleMessage(msg)
 	})
 	messageHandler.onMessageSent(msg => {
 		pluginManager.triggerMessageSent(msg)
 	})
-	
+
+
 	console.log(`Nodecat Version: 0.2.0
 
-===============
+=================
 
 Nodecat framework is running now!
 
-===============
+=================
 `);
 };
 main();
+
+process.on('uncaughtException', (err, origin) => {
+	console.error('[Error] 未捕获异常', {
+		error: err.message,
+		stack: err.stack,
+		origin: origin
+	});
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+	console.error('[Promise] 未处理被拒绝期约', {
+		reason,
+	});
+});

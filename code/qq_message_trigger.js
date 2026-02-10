@@ -27,51 +27,38 @@ class Trigger {
 	}
 }
 
-/**
- * 
- * @param {QQMessage} msg 
- */
-function textOf(msg) {
-	let i = 0;
-	for (i = 0; i < msg.content.length; i++) {
-		if (msg.content[i].type === "reply") continue;
-		if (msg.content[i].type === "at" && msg.content[i].data?.qq == msg.data.self_id) continue;
-		break;
-	};
-	return msg.toString(i).trim();
-}
 
 class FullTrigger extends Trigger {
 	constructor(str) {
-		super(msg => textOf(msg) === str)
+		super(msg => msg.toNormalString() === str)
 		this.string = str;
 	}
 }
 
 class RegExpTrigger extends Trigger {
 	constructor(reg) {
-		super(msg => reg.test(textOf(msg)));
+		super(msg => reg.test(msg.toNormalString()));
 		this.regexp = reg;
 	}
 }
 
 class StartsWithTrigger extends Trigger {
 	constructor(str) {
-		super(msg => textOf(msg).startsWith(str));
+		super(msg => msg.toNormalString().startsWith(str));
 		this.string = str;
 	}
 }
 
 class EndsWithTrigger extends Trigger {
 	constructor(str) {
-		super(msg => textOf(msg).endsWith(str));
+		super(msg => msg.toNormalString().endsWith(str));
 		this.string = str;
 	}
 }
 
 class IncludesTrigger extends Trigger {
 	constructor(str) {
-		super(msg => textOf(msg).includes(str));
+		super(msg => msg.toNormalString().includes(str));
 		this.string = str;
 	}
 }
