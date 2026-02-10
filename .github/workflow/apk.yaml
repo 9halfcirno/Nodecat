@@ -1,0 +1,47 @@
+name: Build Android APK with Cordova
+
+on:
+  push:
+    branches:
+      - main  # 您可以根据需要修改为自己的分支
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install Dependencies
+      run: |
+        npm install -g cordova
+        npm install
+
+    - name: Setup Android SDK
+      run: |
+        sudo apt-get install -y openjdk-8-jdk
+        export ANDROID_HOME=$HOME/Android/Sdk
+        export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$PATH
+
+    - name: Add Android Platform
+      run: |
+        cordova platform add android
+
+    - name: Build APK
+      run: |
+        cordova build android --release
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: android-apk
+        path: android-app/platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
