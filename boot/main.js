@@ -9,6 +9,7 @@ import createBridge from "./create_onebot_bridge.js"
 import loadOneBotConfig from "./load_onebot_config.js"
 import loadPlugin from "./load_plugin.js"
 import OneBotMessageHandler from "../code/onebot_message_handler.js"
+<<<<<<< HEAD
 import onExit from "../code/on_exit.js"
 import QQMsgHandler from "../code/qq_message_handler.js"
 import {
@@ -16,6 +17,12 @@ import {
 	printSentMsg
 } from "../code/onebot_message_logger.js";
 //import test from "../code/data_mamager.js"
+=======
+//import onExit from "./load_tui.js"
+import QQMsgHandler from "../code/qq_message_handler.js"
+//import test from "../code/data_mamager.js"
+import "../webui/index.js";
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 const RESET = "\x1b[0m";
 const RED = "\x1b[31m";
@@ -60,7 +67,12 @@ async function main() {
 	const connect = await connectToOneBot();
 	const bridge = await createBridge(connect);
 	await loadOneBotConfig(bridge);
+<<<<<<< HEAD
 	const pluginManager = await loadPlugin()
+=======
+	const pluginManager = await loadPlugin();
+
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	// 注册消息处理器
 	const messageHandler = new OneBotMessageHandler(bridge);
 	// 注册消息打印
@@ -74,6 +86,7 @@ async function main() {
 	messageHandler.onMessageSent(msg => {
 		pluginManager.triggerMessageSent(msg)
 	})
+<<<<<<< HEAD
 	messageHandler.onNotice(not => {
 		pluginManager.triggerNotice(not)
 	})
@@ -85,6 +98,12 @@ async function main() {
 
 	console.log(`Nodecat Version: ${packageInfo.version}
 
+=======
+
+
+	console.log(`Nodecat Version: 0.2.0
+
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 =================
 
 Nodecat framework is running now!
@@ -110,6 +129,7 @@ process.on('unhandledRejection', (reason, promise) => {
 	console.error('[Promise] 未处理被拒绝期约', {
 		reason,
 	});
+<<<<<<< HEAD
 });
 
 // 监听主线程消息
@@ -117,4 +137,6 @@ parentPort?.on('message', (msg) => {
 	if (msg.cmd === 'shutdown') {
 		onExit.exit()
 	}
+=======
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 });

@@ -21,7 +21,10 @@ let Command = {
 
 		const perm = options.permission || "member";
 		const only = options.only || "all";
+<<<<<<< HEAD
 		const always = options.always || false;
+=======
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 		let node = this.root;
 		for (const ch of cmd) {
@@ -33,8 +36,12 @@ let Command = {
 		node.callbacks.push({
 			fn: callback,
 			permission: perm,
+<<<<<<< HEAD
 			only: only,
 			always: always
+=======
+			only: only
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 		});
 	},
 
@@ -120,6 +127,7 @@ let Command = {
 		const commandName = input.slice(0, lastMatchIndex).trim();
 
 		for (const {
+<<<<<<< HEAD
 			fn,
 			permission,
 			only,
@@ -132,6 +140,13 @@ let Command = {
 					!NodecatConfig.Groups.settings[msg.group.id]?.enable))
 				if (!always) continue; // 群组关闭bot
 			
+=======
+				fn,
+				permission,
+				only
+			}
+			of lastMatch.callbacks) {
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 			if (!Permission[`is${permission[0].toUpperCase() + permission.slice(1)}`](msg.sender.role)) {
 				msg.reply(`[CQ:at,qq=${msg.sender.id}] 你没有权限调用 ${commandName} 指令`);
 				continue;
@@ -173,3 +188,27 @@ let Command = {
 
 export default Command;
 
+<<<<<<< HEAD
+=======
+Command.register("op", (msg, args) => {
+	let target = msg.content[msg.content.length - 1].data.qq;
+	if (!target) return;
+	switch (args[0]) {
+		case "set":
+			if (!NodecatConfig.Operators.includes(target)) NodecatConfig.Operators.push(parseInt(target));
+			msg.reply(`[CQ:at,qq=${target}] 已成为Nodecat管理员！`)
+			break;
+		case "del":
+			if (NodecatConfig.Operators.includes(target)) NodecatConfig.Operators.splice(NodecatConfig.Operators.indexOf(parseInt(target)), 1);
+			msg.reply(`[CQ:at,qq=${target}] 已不再是Nodecat管理员！`)
+			break;
+	};
+	let f = new fm("./config/permission.json");
+	f.writeSync(JSON.stringify({
+		master: NodecatConfig.Master,
+		operators: NodecatConfig.Operators
+	}, null, 2))
+}, {
+	permission: "master"
+})
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946

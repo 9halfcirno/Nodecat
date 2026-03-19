@@ -1,7 +1,5 @@
 {
-  "master": 000000000,
-  "operators": [
-  ],
-  "white_plan": [
-  ]
+	"master": null,
+	"operators": [
+	]
 }

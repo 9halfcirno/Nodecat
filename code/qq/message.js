@@ -101,7 +101,11 @@ class QQMessage {
 			id: data.sender.user_id,
 			nickname: data.sender.nickname,
 			card: data.sender.card,
+<<<<<<< HEAD
 			role: role !== "member" ? role : data.sender.role || role,
+=======
+			role: role !== "member" ? role : data.sender.role,
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 			title: data.sender.title,
 			level: data.sender.level
 		};
@@ -115,7 +119,11 @@ class QQMessage {
 	}
 
 	reply(msg) {
+<<<<<<< HEAD
 		return QQMsgSender.send(msg, {
+=======
+		QQMsgSender.send(msg, {
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 			group: this.group?.id,
 			user: this.sender.id
 		})
@@ -184,7 +192,11 @@ class QQMessage {
 		}
 		return text;
 	}
+<<<<<<< HEAD
 
+=======
+	
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	/**
 	 * 将消息转为开头不包含回复和@ME的一般字符串
 	 */

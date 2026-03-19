@@ -10,7 +10,11 @@ export default (async function () {
 	NodecatConfig.OneBotNetwork = onebot;
 	if (onebot) console.log(`[Config] 成功加载配置: OneBotNetwork`)
 
+<<<<<<< HEAD
 	// 加载 Sandbox 沙盒配置
+=======
+	// 加载 Sandbox 网络配置
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	const sandbox = readConfig("sandbox.json");
 	NodecatConfig.Sandbox = sandbox;
 	if (sandbox) console.log(`[Config] 成功加载配置: Sandbox`)
@@ -71,6 +75,7 @@ export default (async function () {
 	const groupsFm = new fm("./storage/data/groups.json");
 	let groups = JSON.parse(groupsFm.readSync());
 	
+<<<<<<< HEAD
 	if (!groups) groups = { settings: {} };
 	NodecatConfig.Groups = groups;
 	// groupsFm.writeSync(JSON.stringify(groups), null, 2)
@@ -110,6 +115,17 @@ export default (async function () {
 
 
 
+=======
+	// 加载 Permission 网络配置
+	const per = readConfig("permission.json");
+	NodecatConfig.Master = per.master;
+	NodecatConfig.Operators = per.operators;
+	if (per) console.log(`[Config] 成功加载配置: Permission`)
+	
+	
+	
+	
+>>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	NodecatConfig.Bot = {}
 })
 
