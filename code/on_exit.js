@@ -1,11 +1,8 @@
 import Command from "./command_manager.js"
-<<<<<<< HEAD
 import {
 	parentPort
 } from 'worker_threads';
 
-=======
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 const onExit = [];
 
@@ -30,11 +27,7 @@ async function beforeExit() {
 		try {
 			if (typeof f === "function") await f();
 		} catch (e) {
-<<<<<<< HEAD
 			console.error(`[Exit] execute ${f.name} error.\nError:`, e)
-=======
-			console.error(`[Exit] execute ${f.name} error.\nError: ${e.message}`)
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 		}
 	}
 }
@@ -45,11 +38,7 @@ Command.register("kill", (msg) => {
 	msg.reply(`正在尝试关闭Nodecat!`);
 	try {
 		exit();
-<<<<<<< HEAD
 	} catch (e) {
-=======
-	} catch(e) {
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 		console.error(e);
 		msg.reply(`关闭Nodecat时发生错误！${e.message}`);
 	}
@@ -57,7 +46,6 @@ Command.register("kill", (msg) => {
 	permission: "master"
 })
 
-<<<<<<< HEAD
 Command.register("system", (msg, args) => {
 	if (args[0] === "kill") {
 		process.off("SIGINT", exit);
@@ -88,8 +76,3 @@ const exp = (async function(cb) {
 exp.exit = exit;
 
 export default exp
-=======
-export default (async function(cb) {
-	onExit.push(cb)
-})
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946

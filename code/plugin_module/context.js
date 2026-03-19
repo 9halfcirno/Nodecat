@@ -8,7 +8,6 @@ import Queue from "../queue.js"
 	IncludesTrigger,
 	RegExpTrigger,
 	StartsWithTrigger
-<<<<<<< HEAD
 } from "../qq_message_trigger.js";*/
 // import QQMsgSender from "../qq_message_sender.js"
 import DataManager from "../data_mamager.js"
@@ -34,28 +33,6 @@ import NormalAPI from "./normal_api.js"
 		// this.requestTriggers = [];
 		// this.msgSentTriggers = [];
 		// this.noticeTriggers = [];
-=======
-} from "../qq_message_trigger.js";
-import QQMsgSender from "../qq_message_sender.js"
-import DataManager from "../data_mamager.js"
-import Command from "../command_manager.js"
-import MsgConstructor from "../qq/message_constructor.js"
-import network from "../network.js"
-
-class API {
-	#context; // 上下文引用
-	#msgSendQueue; // 消息发送队列
-	#dataMap; // 数据存储
-	#registeredCommands = []; // 记录插件注册的指令和回调
-	constructor({
-		context,
-		dataMap
-	}) {
-		this.#context = context;
-		this.#dataMap = dataMap;
-		this.msgTriggers = [];
-		this.msgSentTriggers = [];
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 		// this.#msgSendQueue = new Queue([], ({
 			// msg,
@@ -73,50 +50,9 @@ class API {
 		// }
 	// }
 
-<<<<<<< HEAD
 	// get context() {
 		// return this.#context;
 	// }
-=======
-	get data() {
-		return this.#dataMap;
-	}
-	
-	get network() {
-		return network;
-	}
-
-	async require(id) {
-		if (!this.#context.manager.pluginLoaded.has(id)) {
-			await this.#context.manager.loadPluginById(id)
-		}
-		return this.#context.manager.exports.get(id)
-	}
-
-	set exports(exp) {
-		this.#context.exports = exp;
-	}
-	
-	get message() {
-		const msg = new MsgConstructor;
-		return msg
-	}
-
-	sendGroupMessage(group, msg, opts) {
-		if (opts.queue === false) {
-			QQMsgSender.send(msg, {
-				group
-			})
-		} else {
-			this.#msgSendQueue.add({
-				msg: msg,
-				opts: {
-					group
-				}
-			})
-		}
-	}
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 	// get data() {
 		// return this.#dataMap;
@@ -164,7 +100,6 @@ class API {
 		// }
 	// }
 
-<<<<<<< HEAD
 	// sendFriendMessage(friend, msg, opts = {}) {
 		// if (opts.queue === false) {
 			// QQMsgSender.send(msg, {
@@ -377,45 +312,6 @@ class API {
 		// this.#cronJobs = []; // 清空记录
 	// }
 // }
-=======
-	get onCommand() {
-		let self = this;
-		return (cmd, opts) => {
-			return {
-				then(cb) {
-					Command.register(cmd, cb, opts);
-					// 保存到已注册列表，用于卸载时清理
-					self.#registeredCommands.push({
-						cmd,
-						cb
-					});
-					return this;
-				}
-			};
-		};
-	}
-
-	get onMessageSent() {
-		let self = this;
-		return {
-			then(cb) {
-				self.msgSentTriggers.push(cb);
-				return this;
-			}
-		}
-	}
-
-	_clearRegisteredCommands() {
-		this.#registeredCommands.forEach(({
-			cmd,
-			cb
-		}) => {
-			Command.unregister(cmd, cb); // 卸载回调
-		});
-		this.#registeredCommands = []; // 清空记录
-	}
-}
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 
 
 
@@ -442,21 +338,12 @@ class PluginContext {
 
 	async init() {
 		const self = this;
-<<<<<<< HEAD
 		this.dataManager = await DataManager.open(`./plugin/${this.id}/data/data.json`)
 		this.api = new NormalAPI({
 			context: self,
 			dataMap: this.dataManager
 		});
 		await this.pluginMain?.(this.api); // 传入api对象
-=======
-		this.dataManager = await DataManager.open(`plugin/${this.id}`)
-		this.api = new API({
-			context: self,
-			dataMap: this.dataManager
-		});
-		this.pluginMain(this.api); // 传入api对象
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	}
 
 	async unload() {
@@ -465,7 +352,6 @@ class PluginContext {
 		// 卸载插件注册的所有指令回调
 		if (this.api) {
 			this.api._clearRegisteredCommands();
-<<<<<<< HEAD
 			this.api._clearCronJobs();
 		}
 		try {
@@ -476,11 +362,6 @@ class PluginContext {
 		this.exports = undefined;
 		//await DataManager.save();
 		await DataManager.close(`./plugin/${this.id}/data/data.json`) // 关闭
-=======
-		}
-		//await DataManager.save();
-		await DataManager.close(`plugin/${this.id}`) // 关闭
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 		return true;
 	}
 
@@ -494,7 +375,6 @@ class PluginContext {
 
 	triggerMessageSent(msg) {
 		this.api && this.api.msgSentTriggers.forEach(t => t(msg))
-<<<<<<< HEAD
 	}
 
 	triggerNotice(data) {
@@ -503,8 +383,6 @@ class PluginContext {
 
 	triggerRequest(data) {
 		this.api && this.api.requestTriggers.forEach(t => t(data))
-=======
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 	}
 }
 

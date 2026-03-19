@@ -5,11 +5,7 @@ import Bridge from "./onebot_bridge.js"
 import MsgConstructor from "./qq/message_constructor.js"
 
 const QQMessageSender = {
-<<<<<<< HEAD
 	send(msg, opts = {}) {
-=======
-	async send(msg, opts = {}) {
->>>>>>> 1c993640f61e20dd60031e9162ff3b89337f4946
 		if (msg instanceof MsgConstructor) msg = msg.content;
 		if (opts.group) {
 			if (opts.user) { // 私聊
