@@ -1,13 +1,21 @@
+import fs from "fs";
+import {
+	parentPort
+} from 'worker_threads';
+
 import loadConfig from "./load_config.js"
 import connectToOneBot from "./connect_to_onebot.js"
 import createBridge from "./create_onebot_bridge.js"
-import loadPlugin from "./load_plugin.js"
 import loadOneBotConfig from "./load_onebot_config.js"
+import loadPlugin from "./load_plugin.js"
 import OneBotMessageHandler from "../code/onebot_message_handler.js"
-//import onExit from "./load_tui.js"
+import onExit from "../code/on_exit.js"
 import QQMsgHandler from "../code/qq_message_handler.js"
+import {
+	printMsg,
+	printSentMsg
+} from "../code/onebot_message_logger.js";
 //import test from "../code/data_mamager.js"
-import "../webui/index.js";
 
 const RESET = "\x1b[0m";
 const RED = "\x1b[31m";
@@ -52,19 +60,30 @@ async function main() {
 	const connect = await connectToOneBot();
 	const bridge = await createBridge(connect);
 	await loadOneBotConfig(bridge);
-	const pluginManager = await loadPlugin();
-
+	const pluginManager = await loadPlugin()
 	// 注册消息处理器
 	const messageHandler = new OneBotMessageHandler(bridge);
+	// 注册消息打印
+	messageHandler
+		.onMessage(printMsg)
+		.onMessageSent(printSentMsg);
+
 	messageHandler.onMessage(msg => {
 		QQMsgHandler.handleMessage(msg)
 	})
 	messageHandler.onMessageSent(msg => {
 		pluginManager.triggerMessageSent(msg)
 	})
+	messageHandler.onNotice(not => {
+		pluginManager.triggerNotice(not)
+	})
+	messageHandler.onRequest(req => {
+		pluginManager.triggerRequest(req)
+	})
 
+	const packageInfo = JSON.parse(fs.readFileSync("./package.json"))
 
-	console.log(`Nodecat Version: 0.2.0
+	console.log(`Nodecat Version: ${packageInfo.version}
 
 =================
 
@@ -72,6 +91,10 @@ Nodecat framework is running now!
 
 =================
 `);
+	parentPort?.postMessage({
+		cmd: "notice",
+		notice: "ok"
+	})
 };
 main();
 
@@ -87,4 +110,11 @@ process.on('unhandledRejection', (reason, promise) => {
 	console.error('[Promise] 未处理被拒绝期约', {
 		reason,
 	});
+});
+
+// 监听主线程消息
+parentPort?.on('message', (msg) => {
+	if (msg.cmd === 'shutdown') {
+		onExit.exit()
+	}
 });

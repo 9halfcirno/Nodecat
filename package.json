@@ -1,20 +1,20 @@
 {
 	"name": "nodecat",
-	"version": "1.0.0",
-	"description": "Nodeca, 对接Onebot v11协议QQBot框架",
+	"version": "2.0.0",
+	"description": "对接Onebot v11协议QQBot的框架",
 	"keywords": [
 		"nodecat"
 	],
 	"license": "MIT",
 	"author": "9halfcirno",
 	"type": "module",
-	"main": "./boot/main.js",
+	"main": "./index.js",
 	"scripts": {
-		"nodecat": "node boot/main.js"
+		"nodecat": "node index.js"
 	},
 	"dependencies": {
+		"cookie-parser": "^1.4.7",
 		"express": "^5.2.1",
-		"socket.io": "^4.8.3",
-		"ws": "^8.19.0"
+		"node-schedule": "^2.1.1"
 	}
 }

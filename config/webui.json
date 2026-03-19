@@ -1,0 +1,5 @@
+{
+	"password": "nodecat",
+	"port": 3000,
+	"tokenExpire": 86400
+}

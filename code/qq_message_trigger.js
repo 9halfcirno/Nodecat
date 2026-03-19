@@ -21,7 +21,11 @@ class Trigger {
 		}
 		if (this.pat(msg)) {
 			for (const cb of this.cbs) {
-				cb?.(msg);
+				try {
+					cb?.(msg);
+				} catch(e) {
+					msg.reply(`Error: ${e.message}`)
+				}
 			}
 		}
 	}

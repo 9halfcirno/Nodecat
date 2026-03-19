@@ -1,0 +1,56 @@
+html,
+body {
+	padding: 0;
+	margin: 0;
+}
+
+#window {
+	position: fixed;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	background-color: #CCE5ED;
+}
+
+.box {
+	background-color: #EBEBEB;
+}
+
+#body {
+	height: 100%;
+	width: 100%;
+	display: flex;
+}
+
+#top-bar {
+	height: 6vh;
+	width: 100%;
+	background-color: #DADADA;
+}
+
+#side-bar {
+	bottom: 0;
+	left: 0;
+	padding: 4px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+}
+
+#page {
+	width: 100%;
+	background-color: #FFFFFF;
+}
+
+.side-bar-button {
+	width: 2.5em;
+	height: 2.5em;
+	text-align: center;
+	padding: 1px;
+}
+
+.on-select {
+	background-color: #D5D2D2;
+}

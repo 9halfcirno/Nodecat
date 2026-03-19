@@ -5,7 +5,8 @@ export default class Network {
 		query = null,
 		body = null,
 		timeout = 15000,
-		responseType = "json" // json | text | raw
+		responseType = "json", // json | text | raw
+		redirect = "follow"    // follow | manual | error
 	} = {}) {
 		// ---- 拼 query ----
 		if (query && typeof query === "object") {
@@ -21,7 +22,8 @@ export default class Network {
 		const opts = {
 			method,
 			headers,
-			signal: controller.signal
+			signal: controller.signal,
+			redirect      // 新增：透传重定向配置
 		};
 
 		// ---- body 处理 ----
@@ -38,13 +40,21 @@ export default class Network {
 			const res = await fetch(url, opts);
 			clearTimeout(timer);
 
-			if (!res.ok) {
+			// 处理手动重定向的情况（3xx 且 redirect: manual）
+			const isManualRedirect = redirect === "manual" && res.status >= 300 && res.status < 400;
+			if (!res.ok && !isManualRedirect) {
 				const text = await res.text().catch(() => "");
 				throw new Error(
 					`[Network] ${method} ${url} ${res.status}: ${text}`
 				);
 			}
 
+			// 如果是手动重定向，直接返回原始 Response（忽略 responseType）
+			if (isManualRedirect) {
+				return res;
+			}
+
+			// 正常处理响应
 			if (responseType === "raw") return res;
 			if (responseType === "text") return await res.text();
 			return await res.json();

@@ -101,7 +101,7 @@ class QQMessage {
 			id: data.sender.user_id,
 			nickname: data.sender.nickname,
 			card: data.sender.card,
-			role: role !== "member" ? role : data.sender.role,
+			role: role !== "member" ? role : data.sender.role || role,
 			title: data.sender.title,
 			level: data.sender.level
 		};
@@ -115,7 +115,7 @@ class QQMessage {
 	}
 
 	reply(msg) {
-		QQMsgSender.send(msg, {
+		return QQMsgSender.send(msg, {
 			group: this.group?.id,
 			user: this.sender.id
 		})
@@ -126,7 +126,7 @@ class QQMessage {
 		for (const block of this.content) {
 			if (this.content.indexOf(block) < from) continue;
 			if (block.type === QQMessage.BlockType.AT) {
-				let user;
+				let user = {};
 				if (block.data.qq === "all") {
 					text += "@全体成员";
 					continue;
@@ -147,13 +147,13 @@ class QQMessage {
 						user_id: block.data.qq
 					})
 				}
-				text += `@${user.card || user.nickname}`;
+				text += `@${user.card || user.nickname}(${block.data.qq})`;
 			} else if (block.type === QQMessage.BlockType.REPLY) {
 				try {
-					const msg = await OneBotBridge.send("get_msg", {
+					const msg = new QQMessage(await OneBotBridge.send("get_msg", {
 						message_id: block.data.id
-					})
-					text += `[引用:${new QQMessage(msg).toString()}]\n`;
+					}))
+					text += `[引用:<${msg.sender.card || msg.sender.nickname}>: ${msg.toString()}]\n`;
 				} catch (e) {
 					text += "[回复]";
 					console.log(e);
@@ -161,6 +161,8 @@ class QQMessage {
 				}
 			} else if (block.type === "text") {
 				text += block.data.text;
+			} else if (block.type === "image" && block.data.sub_type === 1) {
+				text += `[动画表情]`
 			} else {
 				text += `[${QQMessage.BlockDisplay[block.type] || block.type}]`
 			}
@@ -174,13 +176,15 @@ class QQMessage {
 			if (this.content.indexOf(block) < from) continue;
 			if (block.type === "text") {
 				text += block.data.text;
+			} else if (block.type === "image" && block.data.sub_type === 1) {
+				text += `[动画表情]`
 			} else {
 				text += `[${QQMessage.BlockDisplay[block.type] || block.type}]`
 			}
 		}
 		return text;
 	}
-	
+
 	/**
 	 * 将消息转为开头不包含回复和@ME的一般字符串
 	 */

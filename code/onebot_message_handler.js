@@ -1,5 +1,6 @@
 import onebotV11 from "./onebot v11.js";
 import QQMessage from "./qq/message.js";
+import QQRequest from "./qq/request.js";
 import Bridge from "./onebot_bridge.js";
 
 class OneBotMessageHandler {
@@ -18,14 +19,24 @@ class OneBotMessageHandler {
 	// 在这里处理从各个通信方式收到的消息
 	_receiveMessage(json) {
 		if (!json.post_type) return;
-		
+
+		// if (json.group_id && (!NodecatConfig.WhitePlan.includes(parseFloat(json.group_id)) &&
+		//		json.user_id != NodecatConfig.Master)) return;
+
+		if (json.group_id &&
+			(NodecatConfig.Groups.settings[json.group_id]?.enable !== undefined &&
+				!NodecatConfig.Groups.settings[json.group_id]?.enable)) {
+			if (json.post_type !== onebotV11.EventType.MESSAGE) return;
+		} // 群组关闭bot
+		//if (json.user_id != NodecatConfig.Master && (json.group_id && !["1041550755"].includes(json.group_id?.toString?.()))) return;
+
 		if (typeof json === 'string') json = JSON.parse(json); // 如果未解析则解析
 		switch (json.post_type) {
 			case onebotV11.EventType.MESSAGE:
 				this._handleMessage(new QQMessage(json));
 				break;
 			case onebotV11.EventType.REQUEST:
-				this._handleRequest(json);
+				this._handleRequest(new QQRequest(json));
 				break;
 			case onebotV11.EventType.NOTICE:
 				this._handleNotice(json);
