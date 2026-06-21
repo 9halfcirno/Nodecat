@@ -1,3 +1,6 @@
+> **Important: 该仓库不会再进行任何更新，我正在维护一个新的Bot框架「[Chirucat](https://github.com/9halfcirno/Chirucat)」，如果有需要，请移步新项目**
+
+
 <div align="center" style="font-family:monospace">
 
 # NodeCat
